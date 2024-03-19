@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.capstone.snowe.mapper.TeacherMapper">
+
+
+
+    <!-- ======================================= -->
+    <!-- 강사 설정 (본인의 활동 스키장이 어딘지 설정) -->
+    <!-- 강사 설명이 될 수도 있고 다른 정보들이 추가될 수도 있음 -->
+    <!-- ======================================= -->
+    <update id="updateTeacherStat" parameterType="com.capstone.snowe.dto.TeacherDTO">
+        UPDATE
+            TEACHER
+        SET
+            RESORT_ID = #{resortId} -- 콤보박스라던지 VALUE를 RST01~10, 그에 맞게 스키장명을 일치시켜, 화면에서는 스키장명으로 뜨고 실제 VALUE는 RESORT_ID의 값으로 들어오게
+        WHERE
+            ID = #{id} -- 현재 세션 ID 가져옴
+    </update>
+
+    <!-- 강사가 본인 강습정보 확인 -->
+    <select id="lessonDetail" parameterType="String" resultType="com.capstone.snowe.dto.LessonDTO">
+        SELECT
+            L.LESSON_ID,
+            L.LOGIN_ID,
+            L.LESSON_TITLE,
+            L.LESSON_CLASS,
+            L.LESSON_LEVEL,
+            R.RESORT_ID,
+            L.LESSON_AGE,
+            TO_CHAR(L.LESSON_DATE,'YYYY-MM-DD') as LESSON_DATE,
+            TO_CHAR(L.LESSON_DATE_END,'YYYY-MM-DD') as LESSON_DATE_END,
+            L.LESSON_START,
+            L.LESSON_END,
+            L.RESERVE_COUNT,
+            L.MAX_RESERVE_COUNT,
+            D.LESSON_DIV,
+            L.LESSON_INTRODUCE
+        FROM
+            LESSON L
+                INNER JOIN (SELECT CODE, CODE_VALUE AS LESSON_DIV FROM COMMON_CODE WHERE NO = '004') D
+                           ON L.LESSON_DIV = D.CODE
+                INNER JOIN (SELECT CODE, CODE_VALUE AS RESORT_ID FROM COMMON_CODE WHERE NO = '005') R
+                           ON L.RESORT_ID = R.CODE
+        WHERE
+            L.DEL_YN = 'N'
+          AND L.LOGIN_ID = #{loginId}
+
+        </select>
+
+    <!-- 강습별 신청한 인원 -->
+    <select id="studentByLessonId" parameterType="com.capstone.snowe.dto.LessonDTO" resultType="com.capstone.snowe.dto.LessonDTO">
+        SELECT
+            L.LESSON_ID,
+            R.STUDENT_ID,
+            M.NAME,
+            M.NICKNAME,
+            M.EMAIL
+        FROM
+            LESSON L
+                INNER JOIN RESERVATION R ON L.LESSON_ID = R.LESSON_ID
+                INNER JOIN MEMBER M ON R.STUDENT_ID = M.LOGIN_ID
+        WHERE
+            L.LOGIN_ID = #{loginId}
+            and L.LESSON_ID = #{lessonId}
+            and R.CANCEL_STAT = 'N'
+    </select>
+
+
+</mapper>
